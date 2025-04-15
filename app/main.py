@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query, Depends
 from sqlmodel import  Session, select
 from contextlib import asynccontextmanager
-from .models import Jugador, JugadorCreate, JugadorPublic, JugadorUpdate
+from .models import *
 from .dependencies import get_session, create_db_and_tables, engine
 
 
@@ -99,6 +99,55 @@ def delete_jugador(
     session.delete(db_jugador)
     session.commit()
     return { "ok": True, "message": "Jugador eliminado"}
+
+## rutas de equipos
+@app.post("/equipos/", response_model=EquipoPublic)
+def create_equipo(*,session:Session = Depends(get_session) ,equipo: EquipoCreate):
+    db_equipo = Equipo.model_validate(equipo)
+    session.add(db_equipo)
+    session.commit()
+    session.refresh(db_equipo)
+    return db_equipo
+
+@app.get("/equipos/", response_model=list[EquipoPublic])
+def read_equipos(
+    *,
+    session:Session = Depends(get_session),
+    offset: int = 0,
+    limit: int = Query(default=100, le=100)
+    ):
+    """Obtiene una lista de equipos paginada"""
+    equipos = session.exec(select(Equipo).offset(offset).limit(limit)).all()
+    return equipos
+
+@app.get("/equipos/{equipo_id}", response_model=EquipoPublic)
+def read_equipo(
+    *,
+    session:Session = Depends(get_session),
+    equipo_id: int
+    ):
+    equipo = session.get(Equipo, equipo_id)
+    if not equipo:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    return equipo
+
+@app.patch("/equipos/{equipo_id}", response_model=EquipoPublic, description="Actualiza un equipo existente")
+def update_equipo(
+    *,
+    session:Session = Depends(get_session),
+    equipo_id: int,
+    equipo: EquipoUpdate
+    ):
+    db_equipo = session.get(Equipo, equipo_id)
+    if not db_equipo:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    equipo_data = equipo.model_dump(exclude_unset=True) # se crea un diccionario con los datos a actualizar enviado por el cliente
+    for key, value in equipo_data.items():
+        setattr(db_equipo, key, value)
+    session.add(db_equipo)
+    session.commit()
+    session.refresh(db_equipo)
+    return db_equipo
 
 
 

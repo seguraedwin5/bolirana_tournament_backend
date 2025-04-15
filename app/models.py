@@ -45,3 +45,4 @@ class JugadorUpdate(SQLModel):
     edad: int | None = None
     nickname: str | None = None
     password: str | None = None
+    equipo_id: int | None = None
