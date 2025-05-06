@@ -149,6 +149,23 @@ def update_equipo(
     session.refresh(db_equipo)
     return db_equipo
 
+@app.delete("/equipos/{equipo_id}", response_model=EquipoPublic, description="Elimina un equipo existente")
+def delete_equipo(
+    *,
+    session:Session = Depends(get_session),
+    equipo_id: int
+    ):
+    db_equipo = session.get(Equipo, equipo_id)
+    if not db_equipo:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    session.delete(db_equipo)
+    session.commit()
+    return { "ok": True, "message": "Equipo eliminado"}
+
+### Pendiente seccion Models with Relationships in FastAPI
+### https://sqlmodel.tiangolo.com/tutorial/fastapi/relationships/
+
+
 
 
 
